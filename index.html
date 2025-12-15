@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>Поширення надвисоких ліхтарів</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="apple-touch-icon" href="logo2.png"> <meta property="og:title" content="Підсвітити ліхтар">
+    <meta property="og:description" content="Карта найцінніших ліхтарів Львова">
+    <meta property="og:image" content="fnaf.jpg"> 
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background-color: #050505; font-family: Manrope, sans-serif; overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 80px;
+            background-color: #000; display: flex; align-items: center; padding: 0 40px;
+            box-sizing: border-box; z-index: 100;
+        }
+        .nav-links a, .nav-lang a { color: #fff; text-decoration: none; text-transform: uppercase; font-size: 14px; letter-spacing: 1px; transition: opacity 0.3s; }
+        .nav-links a:hover, .nav-lang a:hover { opacity: 0.7; }
+        .logo-img { height: 40px; width: auto; margin-right: 15px; display: block; }
+        .logo-mobile { display: none; } 
+        .logo-desktop { display: block; }
+        .nav-group-links { display: flex; gap: 30px; }
+        .nav-logo-container { display: flex; }
+
+        @media (min-width: 769px) {
+            .navbar { justify-content: space-between; }
+            .nav-group-links { order: 1; }
+            .nav-logo-container { order: 2; margin-right: 200px; }
+            .nav-lang { order: 3; }
+        }
+        @media (max-width: 768px) {
+            .navbar { height: 65px; padding: 0 20px; }
+            .nav-logo-container { position: relative; z-index: 2; }
+            .nav-group-links {
+                position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+                gap: 35px; width: 100%; margin-left: 100px; z-index: 1;
+            }
+            .nav-links a { font-size: 12px; }
+            .nav-lang { display: none; }
+            .logo-desktop { display: none !important; } 
+            .logo-mobile { display: block !important; height: 30px; } 
+        }
+        #intro-quote {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; max-width: 900px; text-align: center; z-index: 2000; pointer-events: none;
+            color: #fff; font-family: Manrope, sans-serif; transition: opacity 3s ease-in-out; 
+        }
+        #intro-quote p { font-size: 1.5rem; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+        #intro-quote cite { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.7); }
+        #intro-quote.fade-out { opacity: 0; }
+        
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+        
+        #hero-image {
+            position: absolute; top: 250px; left: 50%; transform: translateX(-50%); width: 75%; height: auto;
+            opacity: 0; transition: opacity 2s ease-in-out; z-index: 0; 
+        }
+        #hero-title {
+            position: absolute; top: 300px; left: 50%; transform: translateX(-50%); width: 66.6%; 
+            text-align: center; font-size: 4rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.2em;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.6); opacity: 0; transition: opacity 2s ease-in-out; z-index: 1; margin: 0;
+        }
+        
+        #explore-btn {
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+            pointer-events: auto; cursor: pointer; z-index: 2; 
+            background: transparent; color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+            padding: 18px 50px; border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 50px;
+            opacity: 0; visibility: hidden; transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #explore-btn:hover { background-color: #fff; color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
+        #more-details-btn {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+            pointer-events: auto; cursor: pointer; z-index: 2;
+            background: rgba(255, 215, 0, 0.1); color: #FFD700; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+            padding: 12px 30px; border: 1px solid #FFD700; border-radius: 50px;
+            opacity: 0; visibility: hidden; transition: all 0.5s ease; text-decoration: none;
+            backdrop-filter: blur(5px);
+        }
+        #more-details-btn:hover { background: rgba(255, 215, 0, 0.3); box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        
+        .visible { opacity: 1 !important; visibility: visible !important; transform: translateX(-50%) translateY(0) !important; }
+        .visible-text { opacity: 1 !important; }
+        #info-sidebar {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 400px; background: rgba(15, 15, 15, 0.95);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.15);
+            z-index: 3000;
+            transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex; flex-direction: column;
+            color: #fff; box-shadow: -10px 0 50px rgba(0,0,0,0.9);
+        }
+        
+        #info-sidebar.active { transform: translateX(0); }
+
+        .sidebar-header {
+            padding: 20px 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center; margin-top: 80px;
+        }
+        
+        .close-btn { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; opacity: 0.7; transition: 0.3s; }
+        .close-btn:hover { opacity: 1; transform: rotate(90deg); color: #FFD700; }
+
+        .sidebar-content { padding: 0; overflow-y: auto; flex-grow: 1; }
+        .lantern-image-container {
+            width: 100%; height: 300px; overflow: hidden; position: relative;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .lantern-image {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .lantern-image:hover { transform: scale(1.05); }
+        
+        /* Плейсхолдер якщо фото немає */
+        .no-image-placeholder {
+            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+            color: #444; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .info-container { padding: 30px; }
+
+        .lantern-title { font-size: 26px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: 0.02em; color: #FFD700; line-height: 1.2; }
+        
+        .status-badge {
+            display: inline-block; padding: 6px 14px; border-radius: 50px; font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px;
+            margin-bottom: 25px;
+        }
+        .status-lost { background: rgba(255, 69, 58, 0.15); color: #FF453A; border: 1px solid rgba(255, 69, 58, 0.3); }
+        .status-active { background: rgba(48, 209, 88, 0.15); color: #30D158; border: 1px solid rgba(48, 209, 88, 0.3); }
+
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        
+        .data-item h4 { font-size: 10px; text-transform: uppercase; color: #888; margin: 0 0 8px 0; letter-spacing: 1.5px; }
+        .data-item p { font-size: 15px; color: #fff; margin: 0; font-weight: 500; border-left: 2px solid #FFD700; padding-left: 10px; }
+
+        .media-link {
+            display: inline-block; margin-top: 10px; color: #000; background: #FFD700; 
+            padding: 10px 20px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase;
+            transition: 0.3s;
+            border: none; cursor: pointer;
+        }
+        .media-link:hover { background: #fff; transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+            #hero-title { font-size: 2rem; top: 300px; width: 90%; }
+            #hero-image { top: 150px; width: 90%; }
+            
+            #info-sidebar {
+                top: auto; 
+                bottom: 0; 
+                width: 100%; 
+                height: auto; 
+                max-height: 85vh; 
+                
+                transform: translateY(100%); 
+                border-left: none; 
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 20px 20px 0 0;
+            }
+            #info-sidebar.active { transform: translateY(0); }
+            .sidebar-header { margin-top: 0; padding: 15px 25px; }
+            .lantern-image-container { height: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-group-links nav-links">
+            <a href="https://www.pidsvitu.com/history">ІСТОРІЯ</a>
+            <a href="https://www.pidsvitu.com/future">РОЗВИТОК</a>
+            <a href="https://www.pidsvitu.com/about">ДЕТАЛЬНІШЕ</a>
+        </div>
+        <a href="https://www.pidsvitu.com/" class="nav-logo-container nav-logo">
+            <img src="./logo.png" alt="Лого" class="logo-img logo-desktop">
+            <img src="./logo2.png" alt="Лого" class="logo-img logo-mobile">
+        </a>
+        <div class="nav-lang"><a href="#">UA/EN</a></div>
+    </nav>
+    
+    <div id="intro-quote">
+        <p>"Нове вуличне освітлення надає нашому місту відчуття великоміського та підкреслює його архітектурний спадок"</p>
+        <cite>— Магістрат міста Львова. 1912 рік</cite>
+    </div>
+
+    <div id="ui-layer">
+        <img id="hero-image" src="./base.png" alt="Base Layer">
+        <h1 id="hero-title"></h1>
+        <button id="explore-btn" onclick="startExplore()">Дослідити</button>
+        <a id="more-details-btn" href="https://www.pidsvitu.com/ultrahight" target="_blank">Дослідження надвисоких</a>
+    </div>
+
+    <div id="info-sidebar">
+        <div class="sidebar-header">
+            <span style="font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Картка об'єкту</span>
+            <button class="close-btn" onclick="closeSidebar()">&times;</button>
+        </div>
+        <div class="sidebar-content" id="sidebar-dynamic-content">
+            </div>
+    </div>
+
+    <div id="map"></div>
+
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoibHZpdiIsImEiOiJjbWo2Nzh6Y2MxeXl5M2RyejMzbTZybGJoIn0.oxt28y-TsnDydqPUNkQsMQ';
+
+    const FILES = {
+        roads: './roads.json.geojson',       
+        buildings: './historical2.geojson',  
+        buildings2: './historical3.geojson',
+        lanterns: './ultra_historical.geojson' 
+    };
+
+    const isMobile = window.innerWidth <= 768;
+    const startZoom = isMobile ? 16 : 17; 
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: { 
+            "version": 8, "name": "Dark", "sources": {}, 
+            "layers": [{ "id": "bg", "type": "background", "paint": { "background-color": "#000000" } }] 
+        },        
+        center: [24.0311, 49.8429],
+        zoom: startZoom,
+        pitch: 0,
+        bearing: 0,
+        antialias: true,
+        maxZoom: 25
+    });
+
+    const getPhysicalSize = (meters) => {
+        return ['interpolate', ['exponential', 2], ['zoom'],
+            10, meters * 0.015,  
+            20, meters * 16      
+        ];
+    };
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function processLanternData(geojsonData) {
+        let processed = [];
+        const shiftAmount = 0.00003; 
+        geojsonData.features.forEach(feature => {
+            processed.push(feature);
+            let count = feature.properties['number_of_lights'];
+            if (count == 2) {
+                const clone = JSON.parse(JSON.stringify(feature));
+                if (clone.geometry && clone.geometry.type === 'Point') {
+                    clone.geometry.coordinates[0] += shiftAmount;
+                    processed.push(clone);
+                }
+            }
+        });
+        shuffleArray(processed);
+        processed.forEach((feature, index) => {
+            feature.properties['order'] = index;
+        });
+        return processed;
+    }
+
+    map.on('load', async () => {
+        try {
+            const response = await fetch(FILES.lanterns);
+            if (!response.ok) throw new Error("Помилка завантаження файлу ліхтарів");
+            const rawData = await response.json();
+            const processedFeatures = processLanternData(rawData);
+            const totalLanterns = processedFeatures.length;
+            const finalGeoJSON = { type: 'FeatureCollection', features: processedFeatures };
+            
+            map.addSource('roads-source', { type: 'geojson', data: FILES.roads });
+            map.addSource('buildings-source', { type: 'geojson', data: FILES.buildings });
+            map.addSource('buildings2-source', { type: 'geojson', data: FILES.buildings2 });
+            map.addSource('lanterns-source', { type: 'geojson', data: finalGeoJSON });
+
+            map.addLayer({ 
+                'id': 'roads-layer', 'type': 'line', 'source': 'roads-source', 
+                'paint': { 'line-color': '#1a1a1a', 'line-width': 2, 'line-opacity': 0, 'line-opacity-transition': { duration: 2000 } } 
+            });
+
+            const commonGlowProps = {
+                'circle-opacity': 0, 'circle-opacity-transition': { duration: 3000 }, 'circle-pitch-alignment': 'map'
+            };
+
+            map.addLayer({ 'id': 'glow-ground-small', 'type': 'circle', 'source': 'lanterns-source', 'filter': ['!=', ['get', 'power'], 'bulb'], 'paint': { ...commonGlowProps, 'circle-radius': getPhysicalSize(6), 'circle-color': '#FF8C00', 'circle-blur': 0.8 } });
+            map.addLayer({ 'id': 'glow-ground-large', 'type': 'circle', 'source': 'lanterns-source', 'filter': ['==', ['get', 'power'], 'duga'], 'paint': { ...commonGlowProps, 'circle-radius': getPhysicalSize(22), 'circle-color': '#FF8C00', 'circle-blur': 0.8 } });
+            map.addLayer({ 'id': 'glow-air-small', 'type': 'circle', 'source': 'lanterns-source', 'filter': ['!=', ['get', 'power'], 'bulb'], 'paint': { ...commonGlowProps, 'circle-radius': getPhysicalSize(10), 'circle-color': '#FFD700', 'circle-blur': 1 } });
+            map.addLayer({ 'id': 'glow-air-large', 'type': 'circle', 'source': 'lanterns-source', 'filter': ['==', ['get', 'power'], 'duga'], 'paint': { ...commonGlowProps, 'circle-radius': getPhysicalSize(35), 'circle-color': '#FFD700', 'circle-blur': 1 } });
+
+            const buildingPaint = { 'fill-extrusion-color': '#111', 'fill-extrusion-height': ['coalesce', ['get', 'height'], 15], 'fill-extrusion-opacity': 0, 'fill-extrusion-opacity-transition': { duration: 2000 } };
+            map.addLayer({ 'id': 'buildings-layer', 'type': 'fill-extrusion', 'source': 'buildings-source', 'paint': buildingPaint });
+            map.addLayer({ 'id': 'buildings2-layer', 'type': 'fill-extrusion', 'source': 'buildings2-source', 'paint': buildingPaint });
+
+            map.addLayer({
+                'id': 'lanterns-core',
+                'type': 'circle',
+                'source': 'lanterns-source',
+                'filter': ['<', ['get', 'order'], -1],
+                'paint': { 'circle-radius': 2, 'circle-color': '#FFFFFF', 'circle-opacity': 0.8 } 
+            });
+
+            startAnimation(totalLanterns);
+
+            // --- CLICK INTERACTION ---
+            map.on('click', ['lanterns-core', 'glow-ground-large', 'glow-ground-small'], (e) => {
+                if (e.features.length > 0) {
+                    const feature = e.features[0];
+                    openSidebar(feature.properties);
+                }
+            });
+
+            map.on('mouseenter', ['lanterns-core', 'glow-ground-large'], () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', ['lanterns-core', 'glow-ground-large'], () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+        } catch (err) {
+            console.error(err);
+        }
+    });
+
+    function openSidebar(props) {
+        const sidebar = document.getElementById('info-sidebar');
+        const container = document.getElementById('sidebar-dynamic-content');
+        const typeImages = {
+            "I": "./type_1.png",
+            "II": "./type_2.jpg",
+            "III": "./type_3.jpg",
+            "IV": "./type_4.jpg",
+            "V": "./type_5.jpg",
+            "VI": "./type_6.jpg",
+            "Віденський": "./type_vienna.jpg"
+        };
+
+        const name = props.Name || "Невідомий об'єкт";
+        const state = props.state_ || "Невідомо";
+        const author = props.author || "Н/Д";
+        const type = props.type || "Н/Д";
+        const lightsCount = props.number_of_lights || "1";
+        
+        // Визначаємо картинку
+        const cleanType = type.toString().trim();
+        const imgSrc = typeImages[cleanType] || null; 
+
+        let statusClass = 'status-active';
+        if (state.toLowerCase().includes('втрачений') || state.toLowerCase().includes('lost')) {
+            statusClass = 'status-lost';
+        }
+
+        // Формування HTML картинки
+        let imageHtml = '';
+        if (imgSrc) {
+            imageHtml = `<div class="lantern-image-container">
+                            <img src="${imgSrc}" class="lantern-image" alt="${name} (${type})" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'no-image-placeholder\\'>Фото для типу ${type} відсутнє</div>'">
+                         </div>`;
+        } else {
+            imageHtml = `<div class="lantern-image-container">
+                            <div class="no-image-placeholder">Зображення не знайдено</div>
+                         </div>`;
+        }
+
+        let html = `
+            ${imageHtml}
+            <div class="info-container">
+                <h2 class="lantern-title">${name}</h2>
+                <div class="status-badge ${statusClass}">${state}</div>
+                
+                <div class="data-grid">
+                    <div class="data-item">
+                        <h4>Автор</h4>
+                        <p>${author}</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Тип</h4>
+                        <p>${type}</p>
+                    </div>
+                    <div class="data-item">
+                        <h4>Кількість ламп</h4>
+                        <p>${lightsCount}</p>
+                    </div>
+                </div>
+        `;
+
+        const savedLocationsLink = "https://list.pidsvitu.com/"; 
+
+        html += `<a href="${savedLocationsLink}" target="_blank" class="media-link">Де збереглися</a>`;
+        
+        html += `</div>`;
+
+        container.innerHTML = html;
+        sidebar.classList.add('active');
+    }
+
+    function closeSidebar() {
+        document.getElementById('info-sidebar').classList.remove('active');
+    }
+    function startAnimation(totalPoints) {
+        const startTime = Date.now();
+        const appearanceDuration = 2000; 
+        function frame() {
+            const now = Date.now();
+            let progress = (now - startTime) / appearanceDuration;
+            if (progress > 1) progress = 1;
+            const ease = Math.pow(progress, 3); 
+            const limit = Math.floor(ease * totalPoints);
+            map.setFilter('lanterns-core', ['<', ['get', 'order'], limit]);
+            if (progress < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                document.getElementById('intro-quote').classList.add('fade-out');
+                map.setFilter('lanterns-core', null);
+                startPhaseTwo();
+            }
+        }
+        requestAnimationFrame(frame);
+    }
+    const startZoom2 = isMobile ? 11.9 : 13.8; 
+    const exploreZoom = isMobile ? 14.5 : 15; 
+
+    function startPhaseTwo() {
+        map.setPaintProperty('roads-layer', 'line-opacity', 1);
+        map.setPaintProperty('buildings-layer', 'fill-extrusion-opacity', 0.5);
+        map.setPaintProperty('buildings2-layer', 'fill-extrusion-opacity', 0.5);
+        map.setPaintProperty('glow-ground-small', 'circle-opacity', 0.6);
+        map.setPaintProperty('glow-ground-large', 'circle-opacity', 0.6);
+        map.setPaintProperty('glow-air-small', 'circle-opacity', 0.2);
+        map.setPaintProperty('glow-air-large', 'circle-opacity', 0.2);
+        const flyDuration = 7000;
+        map.easeTo({ zoom: startZoom2, pitch: 50, duration: flyDuration, easing: t => t * (2 - t) });
+        setTimeout(() => {
+            document.getElementById('hero-title').classList.add('visible-text');
+            document.getElementById('explore-btn').classList.add('visible');
+            document.getElementById('hero-image').classList.add('visible');
+        }, flyDuration);
+    }
+
+    function startExplore() {
+        document.getElementById('hero-title').classList.remove('visible-text');
+        document.getElementById('explore-btn').classList.remove('visible');
+        document.getElementById('hero-image').classList.remove('visible');
+        document.getElementById('more-details-btn').classList.add('visible');
+        map.easeTo({ zoom: exploreZoom, pitch: 10, duration: 2000 });
+    }
+</script>
+</body>
+</html>
