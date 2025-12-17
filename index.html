@@ -46,6 +46,14 @@
             .nav-lang { display: none; }
             .logo-desktop { display: none !important; }
             .logo-mobile { display: block !important; height: 30px; }
+            #more-details-btn {
+        width: auto;             /* Дозволяє кнопці розширюватись під контент */
+        min-width: 280px;        /* Задає мінімальну ширину, щоб вона виглядала солідно */
+        padding: 14px 40px;      /* Трохи збільшуємо внутрішні відступи з боків */
+        white-space: nowrap;     /* ЗАБОРОНЯЄ перенос тексту на новий рядок */
+        font-size: 11px;         /* Можна трішки зменшити шрифт для кращого балансу */
+        bottom: 30px;            /* Можна підняти або опустити за потреби */
+    }
         }
         #intro-quote {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -77,13 +85,29 @@
         }
         #explore-btn:hover { background-color: #fff; color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.7); }
         #more-details-btn {
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
-            pointer-events: auto; cursor: pointer; z-index: 2;
-            background: rgba(255, 215, 0, 0.1); color: #FFD700; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-            padding: 12px 30px; border: 1px solid #FFD700; border-radius: 50px;
-            opacity: 0; visibility: hidden; transition: all 0.5s ease; text-decoration: none;
-            backdrop-filter: blur(5px);
-        }
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 2;
+    background: rgba(255, 215, 0, 0.1);
+    color: #FFD700;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px 30px;
+    border: 1px solid #FFD700;
+    border-radius: 50px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.5s ease;
+    text-decoration: none;
+    backdrop-filter: blur(5px);
+    white-space: nowrap; /* Додайте це сюди, щоб працювало скрізь */
+}
         #more-details-btn:hover { background: rgba(255, 215, 0, 0.3); box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
         
         .visible { opacity: 1 !important; visibility: visible !important; transform: translateX(-50%) translateY(0) !important; }
@@ -450,3 +474,4 @@
 </script>
 </body>
 </html>
+
