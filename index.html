@@ -5,7 +5,8 @@
     <title>Поширення надвисоких ліхтарів</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="logo2.png">
-    <link rel="apple-touch-icon" href="logo2.png"> <meta property="og:title" content="Підсвітити ліхтар">
+    <link rel="apple-touch-icon" href="logo2.png">
+    <meta property="og:title" content="Підсвітити ліхтар">
     <meta property="og:description" content="Карта найцінніших ліхтарів Львова">
     <meta property="og:image" content="fnaf.jpg">
     <meta property="og:image:width" content="1200">
@@ -13,7 +14,7 @@
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-    <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script> <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -271,21 +272,6 @@
         maxZoom: 25,
         maxBounds: lvivBound
     });
-
-    const map = new mapboxgl.Map({
-        container: 'map',
-        style: {
-            "version": 8, "name": "Dark", "sources": {},
-            "layers": [{ "id": "bg", "type": "background", "paint": { "background-color": "#000000" } }]
-        },        
-        center: [24.0311, 49.8429],
-        zoom: startZoom,
-        pitch: 0,
-        bearing: 0,
-        antialias: true,
-        maxZoom: 25
-    });
-
     const getPhysicalSize = (meters) => {
         return ['interpolate', ['exponential', 2], ['zoom'],
             10, meters * 0.015,  
@@ -500,6 +486,7 @@
 </script>
 </body>
 </html>
+
 
 
 
