@@ -4,15 +4,6 @@
     <meta charset="utf-8">
     <title>Поширення надвисоких ліхтарів</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="logo2.png">
-    <link rel="apple-touch-icon" href="logo2.png"> <meta property="og:title" content="Підсвітити ліхтар">
-    <meta property="og:description" content="Карта найцінніших ліхтарів Львова">
-    <meta property="og:image" content="fnaf.jpg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
@@ -21,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ... (існуючі стилі) ... */
         body { margin: 0; padding: 0; background-color: #050505; font-family: Manrope, sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         
@@ -129,14 +121,23 @@
             transition: transform 0.5s ease;
         }
         .lantern-image:hover { transform: scale(1.05); }
-        
-        /* Плейсхолдер якщо фото немає */
+
+        /* Стиль для джерела зображення */
+        .image-source-caption {
+            padding: 8px 30px 0 30px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-style: italic;
+        }
+
         .no-image-placeholder {
             width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
             color: #444; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
         }
 
-        .info-container { padding: 30px; }
+        .info-container { padding: 22px 30px 30px 30px; } /* Трохи зменшив верхній паддінг через додавання джерела */
 
         .lantern-title { font-size: 26px; font-weight: 700; margin: 0 0 10px 0; letter-spacing: 0.02em; color: #FFD700; line-height: 1.2; }
         
@@ -161,20 +162,9 @@
         .media-link:hover { background: #fff; transform: translateY(-2px); }
 
         @media (max-width: 768px) {
-            #hero-title { font-size: 2rem; top: 300px; width: 90%; }
-            #hero-image { top: 150px; width: 90%; }
-            
             #info-sidebar {
-                top: auto;
-                bottom: 0;
-                width: 100%;
-                height: auto;
-                max-height: 85vh;
-                
-                transform: translateY(100%);
-                border-left: none;
-                border-top: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 20px 20px 0 0;
+                top: auto; bottom: 0; width: 100%; height: auto; max-height: 85vh;
+                transform: translateY(100%); border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px 20px 0 0;
             }
             #info-sidebar.active { transform: translateY(0); }
             .sidebar-header { margin-top: 0; padding: 15px 25px; }
@@ -213,13 +203,13 @@
             <span style="font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 2px;">Картка об'єкту</span>
             <button class="close-btn" onclick="closeSidebar()">&times;</button>
         </div>
-        <div class="sidebar-content" id="sidebar-dynamic-content">
-            </div>
+        <div class="sidebar-content" id="sidebar-dynamic-content"></div>
     </div>
 
     <div id="map"></div>
 
 <script>
+    // ... (весь код карти до функції openSidebar залишається незмінним) ...
     mapboxgl.accessToken = 'pk.eyJ1IjoibHZpdiIsImEiOiJjbWo4aDZjdWswMDhjM2pyMzVvMGptazl4In0.ZDgyhSS-3jI_0nGmZrJNkA';
 
     const FILES = {
@@ -332,7 +322,6 @@
 
             startAnimation(totalLanterns);
 
-            // --- CLICK INTERACTION ---
             map.on('click', ['lanterns-core', 'glow-ground-large'], (e) => {
                 if (e.features.length > 0) {
                     const feature = e.features[0];
@@ -356,14 +345,9 @@
         const sidebar = document.getElementById('info-sidebar');
         const container = document.getElementById('sidebar-dynamic-content');
         
-        // --- ВІДНОВЛЕНА ЛОГІКА ТИПІВ (Fallback) ---
         const typeImages = {
-            "I": "./type_1.png",
-            "II": "./type_2.jpg",
-            "III": "./type_3.jpg",
-            "IV": "./type_4.jpg",
-            "V": "./type_5.jpg",
-            "VI": "./type_6.jpg",
+            "I": "./type_1.png", "II": "./type_2.jpg", "III": "./type_3.jpg",
+            "IV": "./type_4.jpg", "V": "./type_5.jpg", "VI": "./type_6.jpg",
             "Віденський": "./type_vienna.jpg"
         };
 
@@ -372,32 +356,28 @@
         const author = props.author || "Н/Д";
         const type = props.type || "Н/Д";
         const lightsCount = props.number_of_lights || "1";
+        const imgSourceInfo = props.image_source || ""; // Стовпець джерела
         
-        // --- ЛОГІКА ВИБОРУ ФОТО ---
-        // 1. Спробувати взяти посилання з стовпця gx_media_links_2
         let imgSrc = props.gx_media_links;
-
-        // 2. Якщо посилання немає, спробувати знайти фото по типу
         if (!imgSrc) {
             const cleanType = type.toString().trim();
             imgSrc = typeImages[cleanType] || null;
         }
 
-        let statusClass = 'status-active';
-        if (state.toLowerCase().includes('втрачений') || state.toLowerCase().includes('lost')) {
-            statusClass = 'status-lost';
-        }
+        let statusClass = state.toLowerCase().includes('втрачений') || state.toLowerCase().includes('lost') ? 'status-lost' : 'status-active';
 
-        // Формування HTML картинки
+        // Формування HTML картинки та джерела
         let imageHtml = '';
         if (imgSrc) {
             imageHtml = `<div class="lantern-image-container">
-                             <img src="${imgSrc}" class="lantern-image" alt="${name} (${type})" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'no-image-placeholder\\'>Фото недоступне</div>'">
-                          </div>`;
-        } else {
-            imageHtml = `<div class="lantern-image-container">
-                            <div class="no-image-placeholder">Зображення не знайдено</div>
+                            <img src="${imgSrc}" class="lantern-image" alt="${name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'no-image-placeholder\\'>Фото недоступне</div>'">
                          </div>`;
+            // Додаємо підпис джерела, якщо він є
+            if (imgSourceInfo) {
+                imageHtml += `<div class="image-source-caption">Джерело: ${imgSourceInfo}</div>`;
+            }
+        } else {
+            imageHtml = `<div class="lantern-image-container"><div class="no-image-placeholder">Зображення не знайдено</div></div>`;
         }
 
         let html = `
@@ -405,33 +385,20 @@
             <div class="info-container">
                 <h2 class="lantern-title">${name}</h2>
                 <div class="status-badge ${statusClass}">${state}</div>
-                
                 <div class="data-grid">
-                    <div class="data-item">
-                        <h4>Автор</h4>
-                        <p>${author}</p>
-                    </div>
-                    <div class="data-item">
-                        <h4>Тип</h4>
-                        <p>${type}</p>
-                    </div>
-                    <div class="data-item">
-                        <h4>Кількість ламп</h4>
-                        <p>${lightsCount}</p>
-                    </div>
+                    <div class="data-item"><h4>Автор</h4><p>${author}</p></div>
+                    <div class="data-item"><h4>Тип</h4><p>${type}</p></div>
+                    <div class="data-item"><h4>Кількість ламп</h4><p>${lightsCount}</p></div>
                 </div>
+                <a href="https://list.pidsvitu.com/" target="_blank" class="media-link">Де збереглися</a>
+            </div>
         `;
-
-        const savedLocationsLink = "https://list.pidsvitu.com/";
-
-        html += `<a href="${savedLocationsLink}" target="_blank" class="media-link">Де збереглися</a>`;
-        
-        html += `</div>`;
 
         container.innerHTML = html;
         sidebar.classList.add('active');
     }
 
+    // ... (решта функцій анімації та керування залишаються без змін) ...
     function closeSidebar() {
         document.getElementById('info-sidebar').classList.remove('active');
     }
@@ -462,10 +429,8 @@
         map.setPaintProperty('roads-layer', 'line-opacity', 1);
         map.setPaintProperty('buildings-layer', 'fill-extrusion-opacity', 0.5);
         map.setPaintProperty('buildings2-layer', 'fill-extrusion-opacity', 0.5);
-        
         map.setPaintProperty('glow-ground-large', 'circle-opacity', 0.6);
         map.setPaintProperty('glow-air-large', 'circle-opacity', 0.2);
-        
         const flyDuration = 7000;
         map.easeTo({ zoom: startZoom2, pitch: 50, duration: flyDuration, easing: t => t * (2 - t) });
         setTimeout(() => {
@@ -485,5 +450,3 @@
 </script>
 </body>
 </html>
-
-
