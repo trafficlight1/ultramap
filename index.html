@@ -440,7 +440,8 @@
     }
     function startAnimation(totalPoints) {
         const startTime = Date.now();
-        const appearanceDuration = 2000;
+        const appearanceDuration = isMobile ? (2000 / 1.5) : 2000;
+
         function frame() {
             const now = Date.now();
             let progress = (now - startTime) / appearanceDuration;
@@ -486,6 +487,7 @@
 </script>
 </body>
 </html>
+
 
 
 
